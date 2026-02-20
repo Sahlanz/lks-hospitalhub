@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HospitalHub — Smart Hospital System</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f9ff; color: #1e293b; }
+    nav { background: #0c4a6e; padding: 0 2rem;
+          display: flex; justify-content: space-between; align-items: center;
+          box-shadow: 0 2px 12px rgba(0,0,0,0.2); }
+    .brand { color: white; font-size: 1.5rem; font-weight: 800; padding: 1rem 0; }
+    .brand span { color: #38bdf8; }
+    .nav-links { display: flex; gap: 0.5rem; }
+    .nav-links a { color: #94a3b8; text-decoration: none; padding: 0.5rem 1rem;
+                   border-radius: 6px; font-size: 0.9rem; }
+    .nav-links a:hover { color: white; background: #075985; }
+    .nav-links .btn-primary { background: #0284c7; color: white !important; font-weight: 700; }
+
+    .hero { background: linear-gradient(135deg, #0c4a6e 0%, #075985 50%, #0c4a6e 100%);
+            padding: 5rem 2rem; text-align: center; }
+    .hero h1 { color: white; font-size: 3rem; font-weight: 900; line-height: 1.2;
+               margin-bottom: 1rem; }
+    .hero h1 span { color: #38bdf8; }
+    .hero p { color: #94a3b8; font-size: 1.1rem; max-width: 600px;
+              margin: 0 auto 3rem; }
+    .hero-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    .btn-hero { padding: 1rem 2rem; border-radius: 10px; font-size: 1rem;
+                font-weight: 700; text-decoration: none; transition: all 0.2s; }
+    .btn-primary-hero { background: #0284c7; color: white; }
+    .btn-primary-hero:hover { background: #0369a1; transform: translateY(-2px); }
+    .btn-outline-hero { background: transparent; color: white;
+                        border: 2px solid rgba(255,255,255,0.3); }
+    .btn-outline-hero:hover { background: rgba(255,255,255,0.1); }
+
+    .stats { background: white; padding: 2rem;
+             display: flex; justify-content: center; gap: 4rem;
+             border-bottom: 1px solid #e0f2fe; }
+    .stat { text-align: center; }
+    .stat-num { font-size: 2.2rem; font-weight: 800; color: #0284c7; }
+    .stat-label { font-size: 0.82rem; color: #64748b; margin-top: 0.3rem; }
+
+    .services { max-width: 1100px; margin: 3rem auto; padding: 0 1rem; }
+    .services h2 { text-align: center; font-size: 1.8rem; font-weight: 800;
+                   color: #0c4a6e; margin-bottom: 0.5rem; }
+    .services p { text-align: center; color: #64748b; margin-bottom: 2.5rem; }
+    .services-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+    .service-card { background: white; border-radius: 16px; padding: 2rem;
+                    text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+                    border: 2px solid transparent; transition: all 0.2s; cursor: pointer; }
+    .service-card:hover { border-color: #38bdf8; transform: translateY(-4px);
+                          box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+    .service-icon { font-size: 3rem; margin-bottom: 1rem; }
+    .service-card h3 { font-size: 1.1rem; font-weight: 700; color: #0c4a6e;
+                       margin-bottom: 0.5rem; }
+    .service-card p { font-size: 0.85rem; color: #64748b; line-height: 1.5; }
+    .service-btn { display: inline-block; margin-top: 1.2rem; background: #0284c7;
+                   color: white; text-decoration: none; padding: 0.6rem 1.2rem;
+                   border-radius: 8px; font-size: 0.85rem; font-weight: 600; }
+
+    .doctors-section { background: #0c4a6e; padding: 3rem 2rem; margin-top: 3rem; }
+    .doctors-section h2 { text-align: center; color: white; font-size: 1.8rem;
+                           font-weight: 800; margin-bottom: 0.5rem; }
+    .doctors-section p { text-align: center; color: #94a3b8; margin-bottom: 2rem; }
+    .doctors-grid { max-width: 1100px; margin: 0 auto;
+                    display: grid; grid-template-columns: repeat(auto-fill, minmax(240px,1fr));
+                    gap: 1rem; }
+    .doctor-card { background: rgba(255,255,255,0.05); border-radius: 12px;
+                   padding: 1.5rem; border: 1px solid rgba(255,255,255,0.1); }
+    .doctor-avatar { width: 56px; height: 56px; background: #0284c7; border-radius: 50%;
+                     display: flex; align-items: center; justify-content: center;
+                     font-size: 1.5rem; margin-bottom: 1rem; }
+    .doctor-name { color: white; font-weight: 700; font-size: 0.95rem; }
+    .doctor-spec { color: #38bdf8; font-size: 0.8rem; margin-top: 0.3rem; }
+    .doctor-room { color: #94a3b8; font-size: 0.78rem; margin-top: 0.3rem; }
+    .doctor-status { display: inline-block; margin-top: 0.8rem; padding: 0.2rem 0.7rem;
+                     border-radius: 999px; font-size: 0.72rem; font-weight: 700; }
+    .status-available { background: #14532d; color: #22c55e; }
+    .status-busy { background: #450a0a; color: #ef4444; }
+
+    footer { background: #0c4a6e; color: #94a3b8; padding: 2rem;
+             text-align: center; font-size: 0.85rem; }
+    footer span { color: #38bdf8; }
+    .loading { text-align: center; color: #94a3b8; padding: 2rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="brand">Hospital<span>Hub</span></div>
+    <div class="nav-links">
+      <a href="/">Home</a>
+      <a href="/queue-monitor">Queue Monitor</a>
+      <a href="/dashboard">Admin Dashboard</a>
+      <a href="/register" class="btn-primary">+ Register Patient</a>
+    </div>
+  </nav>
+
+  <div class="hero">
+    <h1>Smart Hospital<br/><span>Management System</span></h1>
+    <p>Streamline patient registration, manage appointment queues, and monitor hospital operations in real-time.</p>
+    <div class="hero-actions">
+      <a href="/register" class="btn-hero btn-primary-hero">🏥 Register as Patient</a>
+      <a href="/queue-monitor" class="btn-hero btn-outline-hero">📋 View Queue Status</a>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-num" id="s-doctors">-</div>
+      <div class="stat-label">Available Doctors</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" id="s-patients">-</div>
+      <div class="stat-label">Patients Today</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" id="s-queue">-</div>
+      <div class="stat-label">Active Queue</div>
+    </div>
+  </div>
+
+  <div class="services">
+    <h2>Our Services</h2>
+    <p>Everything you need for a seamless hospital experience</p>
+    <div class="services-grid">
+      <div class="service-card" onclick="location.href='/register'">
+        <div class="service-icon">📝</div>
+        <h3>Patient Registration</h3>
+        <p>Register quickly online and get your queue number instantly. No more waiting in physical lines.</p>
+        <a href="/register" class="service-btn">Register Now →</a>
+      </div>
+      <div class="service-card" onclick="location.href='/queue-monitor'">
+        <div class="service-icon">📊</div>
+        <h3>Queue Monitor</h3>
+        <p>Track your position in real-time. Know exactly when it is your turn to see the doctor.</p>
+        <a href="/queue-monitor" class="service-btn">Check Queue →</a>
+      </div>
+      <div class="service-card" onclick="location.href='/dashboard'">
+        <div class="service-icon">🖥️</div>
+        <h3>Admin Dashboard</h3>
+        <p>Full operational visibility for administrators. Manage queues, generate reports, and monitor metrics.</p>
+        <a href="/dashboard" class="service-btn">Open Dashboard →</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="doctors-section">
+    <h2>Our Medical Team</h2>
+    <p>Experienced specialists ready to serve you</p>
+    <div class="doctors-grid" id="doctors-grid">
+      <div class="loading">Loading doctors...</div>
+    </div>
+  </div>
+
+  <footer>
+    <p>© 2025 <span>HospitalHub</span> — Smart Hospital Management System</p>
+    <p style="margin-top:0.5rem">Powered by AWS Elastic Beanstalk, SQS, DynamoDB & CloudWatch</p>
+  </footer>
+
+  <script>
+    async function loadStats() {
+      try {
+        const [docRes, patRes, qRes] = await Promise.all([
+          fetch('/api/doctors'),
+          fetch('/api/patients'),
+          fetch('/api/queue')
+        ]);
+        const [docs, pats, queue] = await Promise.all([
+          docRes.json(), patRes.json(), qRes.json()
+        ]);
+        document.getElementById('s-doctors').textContent =
+          (docs.data || []).filter(d => d.available).length;
+        document.getElementById('s-patients').textContent = pats.total || 0;
+        document.getElementById('s-queue').textContent = queue.total || 0;
+
+        const grid = document.getElementById('doctors-grid');
+        const doctors = docs.data || [];
+        if (doctors.length === 0) {
+          grid.innerHTML = '<div class="loading">No doctors found.</div>';
+          return;
+        }
+        grid.innerHTML = doctors.map(d => `
+          <div class="doctor-card">
+            <div class="doctor-avatar">👨‍⚕️</div>
+            <div class="doctor-name">${d.name}</div>
+            <div class="doctor-spec">${d.specialization}</div>
+            <div class="doctor-room">📍 ${d.room} | 📅 ${d.schedule}</div>
+            <span class="doctor-status ${d.available ? 'status-available' : 'status-busy'}">
+              ${d.available ? '● Available' : '● Busy'}
+            </span>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error('Failed to load stats:', err);
+      }
+    }
+    loadStats();
+  </script>
+</body>
+</html>
