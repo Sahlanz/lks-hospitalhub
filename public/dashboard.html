@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Dashboard — HospitalHub</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #0f172a; color: #e2e8f0; }
+    nav { background: #1e293b; padding: 0 2rem;
+          display: flex; justify-content: space-between; align-items: center;
+          border-bottom: 1px solid #334155; }
+    .brand { color: white; font-size: 1.4rem; font-weight: 800; padding: 1rem 0; }
+    .brand span { color: #38bdf8; }
+    .nav-links a { color: #94a3b8; text-decoration: none; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.88rem; }
+    .nav-links a:hover { color: white; }
+    main { max-width: 1200px; margin: 1.5rem auto; padding: 0 1rem; }
+    .page-title { font-size: 1.4rem; font-weight: 800; color: white; margin-bottom: 1.5rem;
+                  display: flex; justify-content: space-between; align-items: center; }
+    .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+    .stat-card { background: #1e293b; border-radius: 12px; padding: 1.2rem;
+                 border: 1px solid #334155; }
+    .stat-label { font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+                  letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+    .stat-val { font-size: 2rem; font-weight: 800; }
+    .content-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    .panel { background: #1e293b; border-radius: 12px; padding: 1.5rem;
+             border: 1px solid #334155; }
+    .panel-title { font-size: 0.9rem; font-weight: 700; color: #94a3b8;
+                   margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; }
+    .btn { padding: 0.4rem 0.9rem; border-radius: 6px; border: none;
+           cursor: pointer; font-size: 0.82rem; font-weight: 600; }
+    .btn-blue { background: #0284c7; color: white; }
+    .btn-blue:hover { background: #0369a1; }
+    .btn-green { background: #16a34a; color: white; }
+    .btn-green:hover { background: #15803d; }
+    .btn-yellow { background: #ca8a04; color: white; }
+    .btn-yellow:hover { background: #a16207; }
+    .queue-item { background: #0f172a; border-radius: 8px; padding: 0.8rem 1rem;
+                  margin-bottom: 0.6rem; display: flex; align-items: center;
+                  gap: 0.8rem; border: 1px solid #1e293b; }
+    .q-num { width: 36px; height: 36px; border-radius: 50%; background: #334155;
+              display: flex; align-items: center; justify-content: center;
+              font-weight: 800; font-size: 0.9rem; flex-shrink: 0; }
+    .q-info { flex: 1; }
+    .q-name { font-size: 0.88rem; font-weight: 600; }
+    .q-detail { font-size: 0.75rem; color: #64748b; margin-top: 0.2rem; }
+    .q-actions { display: flex; gap: 0.4rem; }
+    .report-item { background: #0f172a; border-radius: 6px; padding: 0.6rem 0.8rem;
+                   margin-bottom: 0.5rem; font-size: 0.8rem; color: #94a3b8;
+                   font-family: monospace; border: 1px solid #1e293b; }
+    .badge { padding: 0.15rem 0.6rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700; }
+    .badge-w { background: #44330a; color: #f59e0b; }
+    .badge-p { background: #14532d; color: #22c55e; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    th { color: #64748b; padding: 0.5rem; text-align: left; font-weight: 500;
+         border-bottom: 1px solid #334155; }
+    td { padding: 0.5rem; border-bottom: 1px solid #1e293b; }
+    .empty-msg { text-align: center; color: #475569; padding: 1.5rem; font-size: 0.85rem; }
+    .full-width { grid-column: 1 / -1; }
+    .generate-btn { width: 100%; background: linear-gradient(135deg, #0284c7, #0369a1);
+                    color: white; border: none; padding: 0.7rem; border-radius: 8px;
+                    font-weight: 700; cursor: pointer; margin-top: 0.5rem; font-size: 0.9rem; }
+    .generate-btn:hover { opacity: 0.9; }
+    #gen-status { text-align: center; margin-top: 0.5rem; font-size: 0.82rem; min-height: 1rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="brand">Hospital<span>Hub</span></div>
+    <div class="nav-links">
+      <a href="/">Home</a>
+      <a href="/register">Register Patient</a>
+      <a href="/queue-monitor">Queue Monitor</a>
+    </div>
+  </nav>
+  <main>
+    <div class="page-title">
+      <span>🖥️ Admin Dashboard</span>
+      <span style="font-size:0.8rem;color:#475569">Auto-refreshes every 15 seconds</span>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-label">Active Queue</div>
+        <div class="stat-val" style="color:#f59e0b" id="d-queue">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Patients</div>
+        <div class="stat-val" style="color:#38bdf8" id="d-patients">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">In Progress</div>
+        <div class="stat-val" style="color:#22c55e" id="d-progress">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Completed Today</div>
+        <div class="stat-val" style="color:#a78bfa" id="d-completed">-</div>
+      </div>
+    </div>
+
+    <div class="content-grid">
+      <div class="panel">
+        <div class="panel-title">
+          <span>📋 Active Queue</span>
+          <button class="btn btn-blue" onclick="loadQueue()">🔄 Refresh</button>
+        </div>
+        <div id="queue-panel"><div class="empty-msg">Loading...</div></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">
+          <span>👥 Recent Patients</span>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Patient ID</th><th>Name</th><th>Doctor</th><th>Registered</th></tr>
+          </thead>
+          <tbody id="patients-table">
+            <tr><td colspan="4" class="empty-msg">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="panel full-width">
+        <div class="panel-title">
+          <span>📊 Daily Report</span>
+        </div>
+        <button class="generate-btn" onclick="generateReport()">
+          📄 Generate & Save Daily Report to S3
+        </button>
+        <div id="gen-status"></div>
+        <div style="margin-top:1rem">
+          <div style="font-size:0.8rem;color:#64748b;margin-bottom:0.5rem">Previous Reports in S3:</div>
+          <div id="reports-list"><div class="empty-msg">Loading...</div></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    async function loadQueue() {
+      const res = await fetch('/api/queue');
+      const data = await res.json();
+      const items = data.data || [];
+      const waiting = items.filter(i => i.status === 'waiting');
+      const progress = items.filter(i => i.status === 'in-progress');
+      document.getElementById('d-queue').textContent = items.length;
+      document.getElementById('d-progress').textContent = progress.length;
+
+      const panel = document.getElementById('queue-panel');
+      if (items.length === 0) {
+        panel.innerHTML = '<div class="empty-msg">No active queue entries</div>';
+        return;
+      }
+      panel.innerHTML = items.map(q => `
+        <div class="queue-item">
+          <div class="q-num">${q.queue_number}</div>
+          <div class="q-info">
+            <div class="q-name">${q.patient_name}
+              <span class="badge ${q.status === 'in-progress' ? 'badge-p' : 'badge-w'}">
+                ${q.status === 'in-progress' ? 'In Progress' : 'Waiting'}
+              </span>
+            </div>
+            <div class="q-detail">👨‍⚕️ ${q.doctor_name} | 🩺 ${q.complaint}</div>
+          </div>
+          <div class="q-actions">
+            ${q.status === 'waiting' ? `
+              <button class="btn btn-yellow" onclick="callPatient('${q.id}')">Call</button>
+            ` : `
+              <button class="btn btn-green" onclick="completePatient('${q.id}')">Done</button>
+            `}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function loadPatients() {
+      const res = await fetch('/api/patients');
+      const data = await res.json();
+      const items = (data.data || []).slice(0, 8);
+      document.getElementById('d-patients').textContent = data.total || 0;
+      const tbody = document.getElementById('patients-table');
+      if (items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="empty-msg">No patients yet</td></tr>';
+        return;
+      }
+      tbody.innerHTML = items.map(p => `
+        <tr>
+          <td style="font-family:monospace;color:#38bdf8">${p.id}</td>
+          <td>${p.name}</td>
+          <td>${p.doctor_name || '-'}</td>
+          <td>${new Date(p.registered_at).toLocaleTimeString('en-US')}</td>
+        </tr>
+      `).join('');
+    }
+
+    async function loadCompleted() {
+      const res = await fetch('/api/queue');
+      const data = await res.json();
+      const all = data.data || [];
+      document.getElementById('d-completed').textContent = 0;
+    }
+
+    async function callPatient(id) {
+      await fetch(`/api/queue/${id}/call`, { method: 'PUT' });
+      loadQueue();
+    }
+
+    async function completePatient(id) {
+      await fetch(`/api/queue/${id}/complete`, { method: 'PUT' });
+      loadQueue();
+    }
+
+    async function generateReport() {
+      const status = document.getElementById('gen-status');
+      status.textContent = '⏳ Generating report...';
+      status.style.color = '#94a3b8';
+      try {
+        const res = await fetch('/api/report/generate', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          status.textContent = `✅ Report saved to S3: ${data.report_key}`;
+          status.style.color = '#22c55e';
+          loadReports();
+        } else {
+          status.textContent = '❌ ' + data.message;
+          status.style.color = '#ef4444';
+        }
+      } catch (err) {
+        status.textContent = '❌ Failed: ' + err.message;
+        status.style.color = '#ef4444';
+      }
+    }
+
+    async function loadReports() {
+      try {
+        const res = await fetch('/api/report/list');
+        const data = await res.json();
+        const el = document.getElementById('reports-list');
+        if (!data.data || data.data.length === 0) {
+          el.innerHTML = '<div class="empty-msg">No reports generated yet</div>';
+          return;
+        }
+        el.innerHTML = data.data.map(f => `
+          <div class="report-item">
+            📄 ${f.Key} &nbsp;|&nbsp;
+            ${(f.Size / 1024).toFixed(1)} KB &nbsp;|&nbsp;
+            ${new Date(f.LastModified).toLocaleString('en-US')}
+          </div>
+        `).join('');
+      } catch (err) {
+        document.getElementById('reports-list').innerHTML =
+          `<div class="empty-msg" style="color:#ef4444">Failed: ${err.message}</div>`;
+      }
+    }
+
+    function loadAll() {
+      loadQueue();
+      loadPatients();
+      loadReports();
+    }
+
+    loadAll();
+    setInterval(loadAll, 15000);
+  </script>
+</body>
+</html>
