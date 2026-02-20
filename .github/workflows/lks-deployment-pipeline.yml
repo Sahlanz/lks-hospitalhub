@@ -1,0 +1,102 @@
+name: LKS Deployment Pipeline
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'app.js'
+      - 'worker.js'
+      - 'routes/**'
+      - 'services/**'
+      - 'public/**'
+      - 'package.json'
+      - 'Procfile'
+      - '.github/workflows/lks-deployment-pipeline.yml'
+
+jobs:
+  deploy-application:
+    name: Deploy Application to Elastic Beanstalk
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Create deployment package
+        run: |
+          zip -r hospitalhub-deploy.zip . \
+            --exclude "*.git*" \
+            --exclude ".github/*"
+
+      - name: Upload artifact to S3
+        run: |
+          aws s3 cp hospitalhub-deploy.zip \
+            s3://${{ secrets.S3_ARTIFACTS_BUCKET }}/hospitalhub-${{ github.sha }}.zip
+
+      - name: Create Elastic Beanstalk application version
+        run: |
+          aws elasticbeanstalk create-application-version \
+            --application-name ${{ secrets.EB_APP_NAME }} \
+            --version-label "v-${{ github.sha }}" \
+            --source-bundle \
+              S3Bucket=${{ secrets.S3_ARTIFACTS_BUCKET }},S3Key=hospitalhub-${{ github.sha }}.zip
+
+      - name: Deploy to Elastic Beanstalk
+        run: |
+          aws elasticbeanstalk update-environment \
+            --application-name ${{ secrets.EB_APP_NAME }} \
+            --environment-name ${{ secrets.EB_ENV_NAME }} \
+            --version-label "v-${{ github.sha }}"
+
+      - name: Wait for environment to update
+        run: |
+          aws elasticbeanstalk wait environment-updated \
+            --application-name ${{ secrets.EB_APP_NAME }} \
+            --environment-names ${{ secrets.EB_ENV_NAME }}
+
+  sync-reports-bucket:
+    name: Sync Report Template to S3
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+
+      - name: Generate report template
+        run: |
+          mkdir -p templates
+          cat > templates/report-template.json << EOF
+          {
+            "template_version": "1.0.0",
+            "generated_by": "HospitalHub CI/CD Pipeline",
+            "commit": "${{ github.sha }}",
+            "deployed_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "fields": [
+              "patient_id", "name", "doctor",
+              "complaint", "registered_at", "status"
+            ]
+          }
+          EOF
+
+      - name: Upload template to S3 reports bucket
+        run: |
+          aws s3 cp templates/report-template.json \
+            s3://${{ secrets.S3_REPORTS_BUCKET }}/templates/report-template.json
