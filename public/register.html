@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Patient Registration — HospitalHub</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f9ff; }
+    nav { background: #0c4a6e; padding: 0 2rem;
+          display: flex; justify-content: space-between; align-items: center; }
+    .brand { color: white; font-size: 1.4rem; font-weight: 800; padding: 1rem 0; }
+    .brand span { color: #38bdf8; }
+    .nav-back { color: #94a3b8; text-decoration: none; padding: 0.5rem 1rem; border-radius: 6px; }
+    .nav-back:hover { color: white; background: #075985; }
+    .header { background: linear-gradient(135deg, #0c4a6e, #075985);
+              padding: 3rem 2rem; text-align: center; }
+    .header h1 { color: white; font-size: 2rem; font-weight: 800; }
+    .header p { color: #94a3b8; margin-top: 0.5rem; }
+    .container { max-width: 750px; margin: 2rem auto; padding: 0 1rem; }
+    .card { background: white; border-radius: 16px; padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-bottom: 1.5rem; }
+    .card-title { font-size: 1rem; font-weight: 700; color: #0c4a6e;
+                  margin-bottom: 1.5rem; padding-bottom: 0.8rem;
+                  border-bottom: 2px solid #e0f2fe; display: flex;
+                  align-items: center; gap: 0.5rem; }
+    label { display: block; font-size: 0.84rem; font-weight: 600;
+            color: #374151; margin-bottom: 0.35rem; }
+    .req { color: #ef4444; }
+    input, select, textarea {
+      width: 100%; padding: 0.75rem 1rem; border: 1.5px solid #e0f2fe;
+      border-radius: 8px; font-size: 0.95rem; font-family: inherit;
+      transition: border-color 0.2s; margin-bottom: 1rem;
+      background: #f0f9ff; }
+    input:focus, select:focus, textarea:focus {
+      outline: none; border-color: #0284c7; background: white; }
+    textarea { resize: vertical; min-height: 100px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .doctor-select-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .doctor-option { border: 2px solid #e0f2fe; border-radius: 10px; padding: 1rem;
+                     cursor: pointer; transition: all 0.2s; }
+    .doctor-option:hover { border-color: #0284c7; background: #f0f9ff; }
+    .doctor-option.selected { border-color: #0284c7; background: #e0f2fe; }
+    .doctor-option input { display: none; }
+    .doc-name { font-weight: 700; color: #0c4a6e; font-size: 0.9rem; }
+    .doc-spec { color: #0284c7; font-size: 0.78rem; margin-top: 0.2rem; }
+    .doc-room { color: #64748b; font-size: 0.75rem; margin-top: 0.2rem; }
+    .btn-submit { width: 100%; background: linear-gradient(135deg, #0284c7, #0369a1);
+                  color: white; border: none; padding: 1rem; border-radius: 10px;
+                  font-size: 1.05rem; font-weight: 700; cursor: pointer; transition: opacity 0.2s; }
+    .btn-submit:hover { opacity: 0.9; }
+    .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+    .result-card { background: white; border-radius: 16px; padding: 2.5rem;
+                   text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.08); display: none; }
+    .queue-number { font-size: 5rem; font-weight: 900; color: #0284c7; line-height: 1; }
+    .result-title { font-size: 1.3rem; font-weight: 700; color: #0c4a6e;
+                    margin: 1rem 0 0.5rem; }
+    .result-info { color: #64748b; font-size: 0.9rem; line-height: 1.6; }
+    .result-id { font-size: 0.85rem; color: #94a3b8; margin-top: 1rem;
+                 font-family: monospace; }
+    .alert-err { background: #fee2e2; color: #dc2626; border-radius: 8px;
+                 padding: 0.8rem 1rem; margin-top: 1rem;
+                 font-size: 0.9rem; display: none; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="brand">Hospital<span>Hub</span></div>
+    <a href="/" class="nav-back">← Back to Home</a>
+  </nav>
+  <div class="header">
+    <h1>📝 Patient Registration</h1>
+    <p>Fill in your details to get your appointment queue number</p>
+  </div>
+  <div class="container">
+    <div id="form-section">
+      <form id="reg-form">
+        <div class="card">
+          <div class="card-title">👤 Personal Information</div>
+          <div class="row">
+            <div>
+              <label>Full Name <span class="req">*</span></label>
+              <input type="text" name="name" placeholder="Your full name" required/>
+            </div>
+            <div>
+              <label>ID Number (KTP/BPJS)</label>
+              <input type="text" name="id_number" placeholder="ID number"/>
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label>Date of Birth</label>
+              <input type="date" name="dob"/>
+            </div>
+            <div>
+              <label>Gender</label>
+              <select name="gender">
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">🩺 Medical Information</div>
+          <label>Chief Complaint <span class="req">*</span></label>
+          <textarea name="complaint"
+            placeholder="Describe your symptoms or reason for visit..." required></textarea>
+        </div>
+
+        <div class="card">
+          <div class="card-title">👨‍⚕️ Select Doctor <span class="req">*</span></div>
+          <div class="doctor-select-grid" id="doctor-grid">
+            <div style="color:#94a3b8">Loading doctors...</div>
+          </div>
+          <input type="hidden" name="doctor_id" id="selected-doctor-id" required/>
+          <input type="hidden" name="doctor_name" id="selected-doctor-name"/>
+        </div>
+
+        <button type="submit" class="btn-submit" id="btn-reg">
+          🏥 Submit Registration
+        </button>
+        <div class="alert-err" id="err-msg"></div>
+      </form>
+    </div>
+
+    <div class="result-card" id="result-card">
+      <div style="font-size:3rem;margin-bottom:1rem">🎉</div>
+      <div style="color:#64748b;font-size:0.9rem;margin-bottom:0.5rem">YOUR QUEUE NUMBER</div>
+      <div class="queue-number" id="res-queue">-</div>
+      <div class="result-title" id="res-title">Registration Successful!</div>
+      <div class="result-info" id="res-info"></div>
+      <div class="result-id" id="res-id"></div>
+      <br/>
+      <a href="/queue-monitor"
+         style="display:inline-block;background:#0284c7;color:white;text-decoration:none;
+                padding:0.8rem 2rem;border-radius:8px;font-weight:700;margin-top:1rem">
+        📊 Monitor Your Queue →
+      </a>
+    </div>
+  </div>
+
+  <script>
+    let doctors = [];
+
+    async function loadDoctors() {
+      const res = await fetch('/api/doctors');
+      const data = await res.json();
+      doctors = (data.data || []).filter(d => d.available);
+      const grid = document.getElementById('doctor-grid');
+      grid.innerHTML = doctors.map(d => `
+        <div class="doctor-option" onclick="selectDoctor('${d.id}','${d.name}',this)">
+          <div class="doc-name">👨‍⚕️ ${d.name}</div>
+          <div class="doc-spec">${d.specialization}</div>
+          <div class="doc-room">📍 ${d.room}</div>
+        </div>
+      `).join('');
+    }
+
+    function selectDoctor(id, name, el) {
+      document.querySelectorAll('.doctor-option').forEach(e => e.classList.remove('selected'));
+      el.classList.add('selected');
+      document.getElementById('selected-doctor-id').value = id;
+      document.getElementById('selected-doctor-name').value = name;
+    }
+
+    document.getElementById('reg-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('btn-reg');
+      const err = document.getElementById('err-msg');
+      const body = Object.fromEntries(new FormData(e.target).entries());
+
+      if (!body.doctor_id) {
+        err.textContent = '⚠️ Please select a doctor before submitting.';
+        err.style.display = 'block';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = '⏳ Processing...';
+      err.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/queue/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          document.getElementById('form-section').style.display = 'none';
+          document.getElementById('res-queue').textContent = data.queue_number;
+          document.getElementById('res-title').textContent = 'Registration Successful!';
+          document.getElementById('res-info').textContent =
+            `Doctor: ${data.doctor} | Estimated Wait: ${data.estimated_wait_minutes} minutes`;
+          document.getElementById('res-id').textContent =
+            `Patient ID: ${data.patient_id}`;
+          document.getElementById('result-card').style.display = 'block';
+        } else {
+          err.textContent = '❌ ' + data.message;
+          err.style.display = 'block';
+          btn.disabled = false;
+          btn.textContent = '🏥 Submit Registration';
+        }
+      } catch (e) {
+        err.textContent = '❌ Failed to submit. Please try again.';
+        err.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = '🏥 Submit Registration';
+      }
+    });
+
+    loadDoctors();
+  </script>
+</body>
+</html>
