@@ -22,6 +22,25 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci  # lebih baik daripada npm install
+
+      - name: Create deployment package
+        run: |
+          zip -r hospitalhub-deploy.zip . \
+            -x "*.git*" \
+            -x ".github/*" \
+            -x "node_modules/*" \
+            -x ".env*" \
+            -x "*.log" \
+            -x "tests/*" \
+            -x "coverage/*"
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -30,40 +49,34 @@ jobs:
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: us-east-1
 
-      - name: Install dependencies
-        run: npm install
-
-      - name: Create deployment package
-        run: |
-          zip -r hospitalhub-deploy.zip . \
-            --exclude "*.git*" \
-            --exclude ".github/*"
-
       - name: Upload artifact to S3
         run: |
           aws s3 cp hospitalhub-deploy.zip \
             s3://${{ secrets.S3_ARTIFACTS_BUCKET }}/hospitalhub-${{ github.sha }}.zip
 
       - name: Create Elastic Beanstalk application version
+        id: create-version
         run: |
+          VERSION_LABEL="v-$(date +%Y%m%d-%H%M%S)-${{ github.sha }}"
           aws elasticbeanstalk create-application-version \
-            --application-name ${{ secrets.EB_APP_NAME }} \
-            --version-label "v-${{ github.sha }}" \
-            --source-bundle \
-              S3Bucket=${{ secrets.S3_ARTIFACTS_BUCKET }},S3Key=hospitalhub-${{ github.sha }}.zip
+            --application-name "${{ secrets.EB_APP_NAME }}" \
+            --version-label "$VERSION_LABEL" \
+            --source-bundle S3Bucket="${{ secrets.S3_ARTIFACTS_BUCKET }}",S3Key="hospitalhub-${{ github.sha }}.zip"
+          echo "VERSION_LABEL=$VERSION_LABEL" >> $GITHUB_OUTPUT
 
       - name: Deploy to Elastic Beanstalk
         run: |
           aws elasticbeanstalk update-environment \
-            --application-name ${{ secrets.EB_APP_NAME }} \
-            --environment-name ${{ secrets.EB_ENV_NAME }} \
-            --version-label "v-${{ github.sha }}"
+            --application-name "${{ secrets.EB_APP_NAME }}" \
+            --environment-name "${{ secrets.EB_ENV_NAME }}" \
+            --version-label "${{ steps.create-version.outputs.VERSION_LABEL }}"
 
       - name: Wait for environment to update
         run: |
           aws elasticbeanstalk wait environment-updated \
-            --application-name ${{ secrets.EB_APP_NAME }} \
-            --environment-names ${{ secrets.EB_ENV_NAME }}
+            --application-name "${{ secrets.EB_APP_NAME }}" \
+            --environment-names "${{ secrets.EB_ENV_NAME }}" \
+            --timeout-in-minutes 10 || echo "Timeout waiter, cek manual di console EB."
 
   sync-reports-bucket:
     name: Sync Report Template to S3
