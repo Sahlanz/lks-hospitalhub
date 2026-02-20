@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Queue Monitor — HospitalHub</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f9ff; }
+    nav { background: #0c4a6e; padding: 0 2rem;
+          display: flex; justify-content: space-between; align-items: center; }
+    .brand { color: white; font-size: 1.4rem; font-weight: 800; padding: 1rem 0; }
+    .brand span { color: #38bdf8; }
+    .nav-links a { color: #94a3b8; text-decoration: none; padding: 0.5rem 1rem; border-radius: 6px; }
+    .nav-links a:hover { color: white; background: #075985; }
+    .header { background: linear-gradient(135deg, #0c4a6e, #075985);
+              padding: 2rem; display: flex; justify-content: space-between;
+              align-items: center; flex-wrap: wrap; gap: 1rem; }
+    .header h1 { color: white; font-size: 1.8rem; font-weight: 800; }
+    .header p { color: #94a3b8; font-size: 0.9rem; }
+    .live-badge { background: rgba(34,197,94,0.2); color: #22c55e;
+                  padding: 0.4rem 1rem; border-radius: 999px; font-size: 0.85rem;
+                  font-weight: 700; display: flex; align-items: center; gap: 0.5rem; }
+    .dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%;
+           animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .stats-row { background: white; padding: 1.2rem 2rem;
+                 display: flex; gap: 3rem; justify-content: center;
+                 border-bottom: 1px solid #e0f2fe; flex-wrap: wrap; }
+    .stat { text-align: center; }
+    .stat-num { font-size: 1.8rem; font-weight: 800; }
+    .stat-label { font-size: 0.75rem; color: #64748b; }
+    .container { max-width: 1000px; margin: 2rem auto; padding: 0 1rem; }
+    .queue-card { background: white; border-radius: 14px; padding: 1rem 1.5rem;
+                  margin-bottom: 0.8rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+                  display: flex; align-items: center; gap: 1.2rem;
+                  border-left: 4px solid #e0f2fe; transition: all 0.2s; }
+    .queue-card.waiting { border-left-color: #f59e0b; }
+    .queue-card.in-progress { border-left-color: #22c55e; background: #f0fdf4; }
+    .queue-number-badge { width: 52px; height: 52px; border-radius: 50%;
+                          display: flex; align-items: center; justify-content: center;
+                          font-size: 1.3rem; font-weight: 800; flex-shrink: 0; }
+    .badge-waiting { background: #fef3c7; color: #d97706; }
+    .badge-progress { background: #dcfce7; color: #15803d; }
+    .queue-info { flex: 1; }
+    .queue-name { font-weight: 700; color: #1e293b; font-size: 1rem; }
+    .queue-detail { font-size: 0.82rem; color: #64748b; margin-top: 0.3rem; }
+    .queue-status { padding: 0.25rem 0.8rem; border-radius: 999px;
+                    font-size: 0.75rem; font-weight: 700; }
+    .status-waiting { background: #fef3c7; color: #d97706; }
+    .status-progress { background: #dcfce7; color: #15803d; }
+    .empty { text-align: center; padding: 4rem; color: #94a3b8; }
+    .empty-icon { font-size: 4rem; margin-bottom: 1rem; }
+    .spinner { width: 36px; height: 36px; border: 3px solid #e0f2fe;
+               border-top-color: #0284c7; border-radius: 50%;
+               animation: spin 0.8s linear infinite; margin: 2rem auto; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="brand">Hospital<span>Hub</span></div>
+    <div class="nav-links">
+      <a href="/">Home</a>
+      <a href="/register">Register</a>
+      <a href="/dashboard">Admin</a>
+    </div>
+  </nav>
+  <div class="header">
+    <div>
+      <h1>📋 Queue Monitor</h1>
+      <p>Real-time patient queue status — auto refreshes every 10 seconds</p>
+    </div>
+    <div class="live-badge"><div class="dot"></div>Live</div>
+  </div>
+  <div class="stats-row">
+    <div class="stat">
+      <div class="stat-num" style="color:#f59e0b" id="sq-waiting">-</div>
+      <div class="stat-label">Waiting</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" style="color:#22c55e" id="sq-progress">-</div>
+      <div class="stat-label">In Progress</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" style="color:#0284c7" id="sq-total">-</div>
+      <div class="stat-label">Total Active</div>
+    </div>
+  </div>
+  <div class="container">
+    <div id="queue-list"><div class="spinner"></div></div>
+  </div>
+
+  <script>
+    async function loadQueue() {
+      try {
+        const res = await fetch('/api/queue');
+        const data = await res.json();
+        const items = data.data || [];
+        const waiting = items.filter(i => i.status === 'waiting');
+        const progress = items.filter(i => i.status === 'in-progress');
+
+        document.getElementById('sq-waiting').textContent = waiting.length;
+        document.getElementById('sq-progress').textContent = progress.length;
+        document.getElementById('sq-total').textContent = items.length;
+
+        const list = document.getElementById('queue-list');
+        if (items.length === 0) {
+          list.innerHTML = `
+            <div class="empty">
+              <div class="empty-icon">✅</div>
+              <p>No active patients in queue right now.</p>
+            </div>`;
+          return;
+        }
+        list.innerHTML = items.map(q => `
+          <div class="queue-card ${q.status === 'in-progress' ? 'in-progress' : 'waiting'}">
+            <div class="queue-number-badge ${q.status === 'in-progress' ? 'badge-progress' : 'badge-waiting'}">
+              ${q.queue_number}
+            </div>
+            <div class="queue-info">
+              <div class="queue-name">${q.patient_name}</div>
+              <div class="queue-detail">
+                👨‍⚕️ ${q.doctor_name} &nbsp;|&nbsp;
+                🩺 ${q.complaint} &nbsp;|&nbsp;
+                ⏰ Est. ${q.estimated_wait} min
+              </div>
+            </div>
+            <span class="queue-status ${q.status === 'in-progress' ? 'status-progress' : 'status-waiting'}">
+              ${q.status === 'in-progress' ? '🟢 In Progress' : '🟡 Waiting'}
+            </span>
+          </div>
+        `).join('');
+      } catch (err) {
+        document.getElementById('queue-list').innerHTML =
+          `<div class="empty" style="color:#ef4444">Failed to load queue: ${err.message}</div>`;
+      }
+    }
+
+    loadQueue();
+    setInterval(loadQueue, 10000);
+  </script>
+</body>
+</html>
